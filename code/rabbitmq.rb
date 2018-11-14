@@ -11,5 +11,42 @@ class Rabbitmq
   # Source (https://www.rabbitmq.com/getstarted.html, http://rubybunny.info/articles/getting_started.html)
   #
   def self.reservation_pub_sub(guest)
+    start_connection
+
+    exchange.publish(guest, :routing_key => queue.name)
+
+    listen_guests
+
+    "Received #{guest}'s Reservation"
+  end
+
+  def self.connection
+    @connection ||= Bunny.new
+  end
+
+  def self.start_connection
+    connection.start
+  end
+
+  def self.close_connection
+    connection.close
+  end
+
+  def self.channel
+    @channel ||= connection.create_channel
+  end
+
+  def self.queue
+    @queue ||= channel.queue("hotel_channel", :auto_delete => true)
+  end
+
+  def self.exchange
+    @exchange ||= channel.default_exchange
+  end
+
+  def self.listen_guests
+    queue.subscribe do |delivery_info, metadata, payload|
+      puts "Received guest #{payload}"
+    end
   end
 end
